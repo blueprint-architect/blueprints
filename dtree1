@@ -1,0 +1,31 @@
+```mermaid
+graph TD;
+    A[Encounter a Problem] --> B{Is this an access issue?};
+    
+    B -- Yes --> C[Find alternative method: API workaround, manual export, third-party tool];
+    C --> D[Test alternative methods];
+    D --> E{Did the alternative method work?};
+    
+    E -- Yes --> F[Document solution and proceed];
+    E -- No --> G[Try a second alternative solution];
+    G --> E;
+
+    B -- No --> H{Have I researched a solution?};
+    
+    H -- No --> I[Use GPT-4, YouTube, Documentation, or Forums];
+    I --> H;
+
+    H -- Yes --> J{Have I tested at least two possible solutions?};
+    
+    J -- No --> K[Test multiple approaches before escalating];
+    K --> J;
+
+    J -- Yes --> L{Is external access or admin approval needed?};
+    
+    L -- Yes --> M[Request necessary access/approval];
+    M --> N[Wait for response, then retry alternative solutions];
+    N --> J;
+    
+    L -- No --> O[Document failed attempts and escalate to manager];
+    O --> P[Submit a detailed report with problem, solutions tried, and what is needed];
+    P --> Q[Manager reviews and provides direction];
