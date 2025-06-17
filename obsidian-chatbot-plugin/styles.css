@@ -1,0 +1,205 @@
+/* Obsidian ChatBot Plugin Styles */
+
+/* Overall Chat View Structure */
+.chat-interface {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--size-4-3); /* Consistent Obsidian padding */
+  box-sizing: border-box;
+  background-color: var(--background-primary); /* Use primary background for the view */
+}
+
+.chat-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-bottom: var(--size-4-2);
+  margin-bottom: var(--size-4-2);
+  border-bottom: 1px solid var(--background-modifier-border);
+  gap: var(--size-4-2);
+}
+
+/* Common Button Styles */
+.clear-chat-button,
+.use-note-context-button,
+.chat-send-button,
+.export-button {
+  padding: var(--size-4-1) var(--size-4-3);
+  font-size: var(--font-ui-small); /* Consistent with Obsidian UI */
+  border: 1px solid var(--background-modifier-border); /* Default border for buttons */
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Specific Button Styling */
+.clear-chat-button {
+  background-color: var(--background-modifier-error);
+  color: var(--text-on-accent); /* Often white, good contrast with error red */
+  border-color: var(--background-modifier-error-hover); /* Darker border for error */
+}
+.clear-chat-button:hover, .clear-chat-button:focus {
+  background-color: var(--background-modifier-error-hover);
+  border-color: var(--background-modifier-error-hover);
+}
+
+.use-note-context-button {
+  background-color: var(--interactive-normal);
+  color: var(--text-muted);
+}
+.use-note-context-button:hover, .use-note-context-button:focus {
+  background-color: var(--interactive-hover);
+  color: var(--text-normal);
+  border-color: var(--interactive-accent-hover);
+}
+
+.chat-send-button {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent); /* Match background */
+}
+.chat-send-button:hover, .chat-send-button:focus {
+  background-color: var(--interactive-accent-hover);
+  border-color: var(--interactive-accent-hover);
+}
+
+/* Chat Messages Area */
+.chat-messages {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: var(--size-4-2);
+  margin-bottom: var(--size-4-2);
+  background-color: var(--background-secondary); /* Slightly different from primary view bg */
+  border-radius: var(--radius-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2); /* Space between messages */
+}
+
+/* Scrollbar Styling (WebKit browsers) */
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent; /* Match messages area background or be transparent */
+}
+.chat-messages::-webkit-scrollbar-thumb {
+  background-color: var(--background-modifier-border-hover); /* Subtle scrollbar thumb */
+  border-radius: 4px;
+}
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background-color: var(--interactive-accent); /* More prominent on hover */
+}
+
+/* Input Area */
+.chat-input-area {
+  display: flex;
+  align-items: center; /* Align input and button vertically */
+  margin-top: auto;
+  padding-top: var(--size-4-2);
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.chat-input {
+  flex-grow: 1;
+  margin-right: var(--size-4-2);
+  padding: var(--size-4-2);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+}
+.chat-input:focus {
+  outline: none;
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 1px var(--interactive-accent); /* Subtle focus glow */
+}
+.chat-input::placeholder {
+  color: var(--text-faint);
+}
+
+/* Individual Message Styling */
+.message {
+  max-width: 85%;
+  padding: var(--size-4-2) var(--size-4-3);
+  margin-bottom: 0; /* Gap is now handled by parent flexbox */
+  border-radius: var(--radius-l); /* Softer, more bubbly radius */
+  word-wrap: break-word;
+  line-height: var(--line-height-normal);
+  position: relative;
+  font-size: var(--font-text-size); /* Match Obsidian's text size */
+}
+.message .message-content { /* Ensure content wrapper exists in HTML */
+    display: block;
+}
+
+
+.user-message {
+  align-self: flex-end;
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-radius: var(--radius-l) var(--radius-l) var(--radius-s) var(--radius-l); /* Tail effect */
+}
+
+.assistant-message {
+  align-self: flex-start;
+  background-color: var(--background-primary-alt);
+  color: var(--text-normal);
+  border-radius: var(--radius-l) var(--radius-l) var(--radius-l) var(--radius-s); /* Tail effect */
+}
+/* Ensure assistant message content has padding if button is absolutely positioned and large */
+.assistant-message .message-content {
+  padding-right: 35px; /* Space for the export button */
+}
+
+
+.error-message {
+  align-self: stretch;
+  text-align: left; /* Changed from center for consistency */
+  background-color: var(--background-modifier-error);
+  color: var(--text-on-error);
+  border-radius: var(--radius-m); /* Consistent radius */
+  margin-top: var(--size-4-1);
+  font-size: var(--font-ui-small);
+}
+
+.loading-message,
+.system-display-message {
+  align-self: center; /* Center these meta-messages */
+  font-style: italic;
+  color: var(--text-muted);
+  background-color: var(--background-secondary);
+  padding: var(--size-4-1) var(--size-4-2);
+  border-radius: var(--radius-m);
+  margin-top: var(--size-4-1);
+  font-size: var(--font-ui-small);
+}
+
+/* Export Button on Assistant Messages */
+.assistant-message .export-button {
+  /* Re-style to use Obsidian variables better */
+  background-color: var(--background-modifier-hover); /* Subtle background */
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+  padding: var(--size-2-1) var(--size-4-1); /* Tiny padding */
+  font-size: var(--font-ui-smaller); /* Even smaller */
+  position: absolute;
+  top: var(--size-4-1);
+  right: var(--size-4-1);
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out, background-color 0.2s ease, color 0.2s ease;
+}
+.assistant-message:hover .export-button {
+  opacity: 0.8;
+}
+.assistant-message .export-button:hover,
+.assistant-message .export-button:focus {
+  opacity: 1;
+  background-color: var(--interactive-hover);
+  color: var(--text-normal);
+  border-color: var(--interactive-accent-hover);
+}

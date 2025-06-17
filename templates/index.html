@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsidian ChatBot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div id="chatContainer">
+        <div id="controls">
+            <button id="clearChatButton">Clear Chat</button>
+        </div>
+        <div id="chatMessages">
+            <!-- Chat messages will appear here -->
+        </div>
+        <div id="dropZone">Drop files here (optional)</div>
+        <div id="inputArea">
+            <input type="text" id="userInput" placeholder="Type your message...">
+            <button id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const dropZone = document.getElementById('dropZone');
+        const clearChatButton = document.getElementById('clearChatButton');
+
+        // Function to add a message to the chat display
+        function addMessageToChat(text, className, isBotMessage = false) { // Removed 'type' parameter
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', className);
+
+            const messageContent = document.createElement('span');
+            messageContent.textContent = text;
+            messageDiv.appendChild(messageContent);
+
+            if (isBotMessage) {
+                const exportButton = document.createElement('button');
+                exportButton.classList.add('export-button');
+                exportButton.textContent = 'Export to Obsidian';
+                exportButton.addEventListener('click', async () => {
+                    try {
+                        const response = await fetch('/export_to_obsidian', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ content: text }), // Send raw text
+                        });
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            const filenameHeader = response.headers.get('Content-Disposition');
+                            let filename = 'chatbot_export.md'; // Default filename
+                            if (filenameHeader) {
+                                const filenameMatch = filenameHeader.match(/filename="?(.+?)"?/);
+                                if (filenameMatch && filenameMatch[1]) {
+                                    filename = filenameMatch[1];
+                                }
+                            }
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            URL.revokeObjectURL(url);
+                            addSystemMessage(`Exported "${filename}" successfully.`);
+                        } else {
+                            const errorData = await response.json();
+                            addSystemMessage(`Error exporting: ${errorData.error || 'Unknown server error'}`);
+                        }
+                    } catch (error) {
+                        console.error('Error exporting message:', error);
+                        addSystemMessage('Error: Could not connect to server for export.');
+                    }
+                });
+                messageDiv.appendChild(exportButton);
+            }
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addSystemMessage(text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', 'system-message');
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        sendButton.addEventListener('click', async () => {
+            const messageText = userInput.value.trim();
+            if (messageText) {
+                addMessageToChat(messageText, 'user-message'); // Removed 'User'
+                userInput.value = '';
+
+                try {
+                    const response = await fetch('/send_message', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: messageText }),
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        addMessageToChat(data.reply, 'bot-message', true); // Removed 'Bot', pass true for isBotMessage
+                    } else {
+                        const errorData = await response.json();
+                        // For error messages from the bot, we still want the export button if it's a bot-like response structure
+                        // but typically errors from send_message are system/error style.
+                        // The current setup sends a reply field even for errors like API key missing.
+                        // Let's assume error messages from send_message are not typical "bot replies" to export.
+                        // So, isBotMessage = false for this path.
+                        // However, the className 'error-message' might conflict with 'bot-message' if we try to apply both.
+                        // The server sends {'reply': "Error: ..."} so it looks like a bot message.
+                        // Let's keep isBotMessage = true for now, as the content might still be export-worthy if it's a detailed error from AI.
+                        addMessageToChat(errorData.reply || 'Error: Could not get a response from the bot.', 'error-message bot-message', true);
+                    }
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    addSystemMessage('Error: Could not connect to the bot.');
+                }
+            }
+        });
+
+        userInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendButton.click();
+            }
+        });
+
+        dropZone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        dropZone.addEventListener('drop', async (event) => {
+            event.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                const formData = new FormData();
+                for (const file of files) {
+                    formData.append('files[]', file);
+                }
+                try {
+                    const response = await fetch('/upload_file', {
+                        method: 'POST',
+                        body: formData,
+                    });
+                    if (response.ok) { // Covers 200 OK and 207 Multi-Status
+                        const data = await response.json();
+                        if (data.filenames && data.filenames.length > 0) {
+                            const Sfilenames = data.filenames.join(', ');
+                            if (response.status === 207) { // Partial success
+                                addSystemMessage(`Partial success: Uploaded ${Sfilenames}. Errors: ${data.errors ? data.errors.join(', ') : 'unknown issues'}.`);
+                            } else { // Full success for all files listed (status 200)
+                                addSystemMessage(`Files (${Sfilenames}) uploaded successfully. Their content can now be discussed.`);
+                            }
+                        } else if (data.message) { // General message from server (e.g. success but no files, or specific info)
+                             addSystemMessage(data.message);
+                        } else { // Fallback for OK responses without expected data structure
+                             addSystemMessage('File upload processed, but no specific file details were returned.');
+                        }
+                    } else { // Not OK (e.g., 400, 500)
+                        const errorData = await response.json();
+                        addSystemMessage(`Error uploading file(s): ${errorData.error || 'Unknown server error'}`);
+                    }
+                } catch (error) {
+                    console.error('Error uploading files:', error);
+                    addSystemMessage('Error: Could not connect to the server to upload files.');
+                }
+            }
+        });
+
+        clearChatButton.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/clear_chat', { method: 'POST' });
+                if (response.ok) {
+                    chatMessages.innerHTML = '';
+                    addSystemMessage('Chat history cleared.');
+                } else {
+                    addSystemMessage('Error: Could not clear chat history on server.');
+                }
+            } catch (error) {
+                console.error('Error clearing chat:', error);
+                addSystemMessage('Error: Could not connect to server to clear chat.');
+            }
+        });
+    </script>
+</body>
+</html>

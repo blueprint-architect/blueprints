@@ -1,0 +1,10 @@
+{
+  "id": "obsidian-chatbot",
+  "name": "Obsidian ChatBot",
+  "version": "0.1.0",
+  "minAppVersion": "0.12.0",
+  "description": "A chatbot integrated into Obsidian, powered by OpenAI.",
+  "author": "AI Assistant (Jules)",
+  "authorUrl": "https://your-repo-url-here",
+  "isDesktopOnly": false
+}
